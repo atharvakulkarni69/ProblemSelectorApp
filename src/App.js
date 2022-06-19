@@ -44,18 +44,13 @@ function App() {
 		// } else {
 		// 	alert("Add more users");
 		// }
-		console.log(userProblemList);
-		let tempList = [];
-		for (var i = 0; i < userProblemList.length; i++) {
-			var obj = userProblemList[i];
-			if (obj.verdict === "OK") {
-				tempList.push({verdict: obj.verdict, problem: obj.problem});
-			}
-		}
-		let tempList2 = Array.from(new Set(tempList));
-		setInfo(tempList2);
+		setInfo(userProblemList);
 	}
 
+	const getUserList = (username) => {
+		var currUserIdx = userNameList.indexOf(username);
+		setInfo(userData[currUserIdx]);
+	}
 
 	const getUsers = async () => {
 		console.log(curUser);
@@ -63,17 +58,19 @@ function App() {
 		const data = await response.json();
 		
 		console.log((data.result));
-		setInfo(data.result);
 		setUserNameList([...userNameList, curUser]);
-		setUserData([...userData, data.result]);
 		var tempList = [];
 		for (var i = 0; i < data.result.length; i++) {
 			const obj = data.result[i];
-			tempList.push({verdict: obj.verdict, problem: obj.problem});
+			if (obj.verdict === "OK") {
+				tempList.push({problem: obj.problem, name: obj.problem.name});
+			}
 		}
-		console.log(tempList);
-		setUserProblemList([...userProblemList, ...tempList]);
-		console.log(userProblemList);
+		var tempList2 = [...new Map(tempList.map((item) => [item["name"], item])).values()];
+		setUserData([...userData, tempList2]);
+		console.log(tempList2);
+		setInfo(tempList2);
+		setUserProblemList([...userProblemList, ...tempList2]);
 		setCurUser("");
 	}
 
@@ -90,7 +87,11 @@ function App() {
 		<div>
 			<Heading>CodeForces Visualizr</Heading>
 			<Grid templateColumns='repeat(10, 1fr)' gap={2} >{ userNameList.map(item => (
-				<GridItem w='100%'><Text>{item}</Text></GridItem>
+				<GridItem w='100%' key={item}>
+					<Button onClick={getUserList(item)}>
+						{item}
+					</Button>
+				</GridItem>
 			))}</Grid>
 			<Input onChange={typing}placeholder="enter username" value={curUser}></Input>
 			<Button onClick={getUsers}>Add</Button>
@@ -99,7 +100,7 @@ function App() {
 			<Text>{info.length}</Text>
 			{
 				info.map((item, ind) => (
-					item.verdict === "OK" && <p key={ind}><a href={str + item.problem.contestId + "/" + item.problem.index}>{ item.problem.name + " " + item.problem.rating}</a></p>
+					<p key={ind}><a href={str + item.problem.contestId + "/" + item.problem.index}>{ item.problem.name + " " + item.problem.rating}</a></p>
 				))
 			}
 		</div>
