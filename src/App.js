@@ -12,6 +12,7 @@ function App() {
 	const [curUser, setCurUser] = useState("");
 	const [userNameList, setUserNameList] = useState([]);
 	const [userData, setUserData] = useState([]);
+	const [userProblemList, setUserProblemList] = useState([]);
 	const [intersection, setIntersection] = useState([]);
 	const [union, setUnion] = useState([]);
 	const [info, setInfo] = useState([]);
@@ -33,18 +34,28 @@ function App() {
 		}
 	}
 
-	// const getUnion = (e) => {
+	const getUnion = (e) => {
 		// if (userData.length >= 2) {
-			// let temp = [];
-			// temp.push(userData[0]);
-			// for (var i = 1; i < userData.length; i++) {
-				// temp = (userData[i].filter(item1 => temp.some(item2 => item1.problem.name !== item2.problem.name)));
-			// }
-			// setInfo(temp);
+		// 	for (var i = 1; i < userData.length; i++) {
+		// 		setUnion(userData[i].filter(item1 => union.some(item2 => item1.problem.name !== item2.problem.name)));
+		// 		console.log(userData[i].filter(item1 => union.some(item2 => item1.problem.name !== item2.problem.name)));
+		// 	}
+		// 	setInfo(union);
 		// } else {
-			// alert("Add more users");
+		// 	alert("Add more users");
 		// }
-	// }
+		console.log(userProblemList);
+		let tempList = [];
+		for (var i = 0; i < userProblemList.length; i++) {
+			var obj = userProblemList[i];
+			if (obj.verdict === "OK") {
+				tempList.push({verdict: obj.verdict, problem: obj.problem});
+			}
+		}
+		let tempList2 = Array.from(new Set(tempList));
+		setInfo(tempList2);
+	}
+
 
 	const getUsers = async () => {
 		console.log(curUser);
@@ -55,8 +66,18 @@ function App() {
 		setInfo(data.result);
 		setUserNameList([...userNameList, curUser]);
 		setUserData([...userData, data.result]);
+		var tempList = [];
+		for (var i = 0; i < data.result.length; i++) {
+			const obj = data.result[i];
+			tempList.push({verdict: obj.verdict, problem: obj.problem});
+		}
+		console.log(tempList);
+		setUserProblemList([...userProblemList, ...tempList]);
+		console.log(userProblemList);
 		setCurUser("");
 	}
+
+
 	useEffect(() => {
 		if (userData.length >= 1){
 			setIntersection(userData[0]);
