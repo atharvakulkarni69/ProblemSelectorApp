@@ -1,5 +1,5 @@
 export const ratings = {
-    "newbie": "pink",
+    "newbie": "gray",
     "pupil": "green",
     "specialist": "cyan",
     "expert": "blue",
