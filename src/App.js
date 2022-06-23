@@ -12,33 +12,12 @@ import { Grid, GridItem } from '@chakra-ui/react'
 import { ratings } from './Components/ratingColors';
 import bgimg from "./constants/im1.jpg";
 
-function getWindowDimensions() {
-	const { innerWidth: width, innerHeight: height } = window;
-	return {
-	  width,
-	  height
-	};
-  }
-  
-function useWindowDimensions() {
-	const [windowDimensions, setWindowDimensions] = useState(getWindowDimensions());
-  
-	useEffect(() => {
-	  function handleResize() {
-		setWindowDimensions(getWindowDimensions());
-	  }
-  
-	  window.addEventListener('resize', handleResize);
-	  return () => window.removeEventListener('resize', handleResize);
-	}, []);
-  
-	return windowDimensions;
-}
-  
 
 function App() {
 	//constants
 	const str = "https://codeforces.com/problemset/problem/";
+	const userStatusApi = "https://codeforces.com/api/user.status?handle=";
+	const userInfoApi = "https://codeforces.com/api/user.info?handles=";
 
 	//useStates
 	const [curUser, setCurUser] = useState("");
@@ -48,18 +27,24 @@ function App() {
 	const [intersection, setIntersection] = useState([]);
 	const [info, setInfo] = useState([]);
 	const [userRatingList, setUserRatingList] = useState([]);
-	const [rating, setRating] = useState(0);
+	const [rating, setRating] = useState();
+	const [filter, setFilter] = useState("Default");
+
 
 	//Handlers
-	function typing(event) {
+	function getUserName(event) {
 		setCurUser(event.target.value);
 	}
 
-	const handleRatingChange = (e) => {
+	//set filtered rating 
+	const getRating = (e) => {
 		setRating(e.target.value);
 	}
 
+
+	//find intersection
 	const getIntersection = (e) => {
+		setFilter("Intersection");
 		if (userData.length >= 2) {
 			let temp = intersection;
 			for (var i = 1; i < userData.length; i++) {
@@ -69,21 +54,41 @@ function App() {
 		}
 	}
 
+
+	//find union
 	const getUnion = (e) => {
+		setFilter("Union");
 		setInfo(userProblemList);
 	}
 
-	const getRatedProblems = () => {
+
+	//finding list of filtered rating according to previous filter (union or intersection)
+	const getFilteredList = () => {
 		let temp = [];
-		for (var i = 0; i < userProblemList.length; i++) {
-			if (userProblemList[i].problem.rating == rating) {
-				temp.push(userProblemList[i]);
+		console.log(filter);
+		if (filter === "Intersection") {
+			if (userData.length >= 2) {
+				temp = userData[0];
+				for (var i = 1; i < userData.length; i++) {
+					temp = (temp.filter(item1 => userData[i].some(item2 => item1.problem.name === item2.problem.name && item1.problem.rating == rating)));
+				}
 			}
+			setInfo(temp);
 		}
-		console.log(temp);
-		setInfo(temp);
+		else {
+			//union or default case
+			for (var i = 0; i < userProblemList.length; i++) {
+				if (userProblemList[i].problem.rating == rating) {
+					temp.push(userProblemList[i]);
+				}
+			}
+			console.log(temp);
+			setInfo(temp);
+		}
+		setRating("");
 	}
 
+	//set userlist problems for every user
 	const getUserList = (username) => {
 		let currUserIdx = 0;
 		for (var i = 0; i < userRatingList.length; i++) {
@@ -94,48 +99,49 @@ function App() {
 		setInfo(userData[currUserIdx]);
 	}
 
+
+	//collect data of user and store it
 	const getUsers = async () => {
-		const response = await fetch("https://codeforces.com/api/user.status?handle=" + curUser);
-		const data = await response.json();
-		if(response.status !== 200) {
+		const response = await fetch(userStatusApi + curUser);//Returns submissions of specified user.
+		const submissionsOfUser = await response.json();
+
+		//error handling if invalid username is entered
+		if (response.status !== 200) {
 			alert("Please enter a valid username");
 			setCurUser("");
 			return;
 		}
-		const responseOfUser = await fetch("https://codeforces.com/api/user.info?handles=" + curUser);
+
+
+		const responseOfUser = await fetch(userInfoApi + curUser);//Returns information about one or several users.
 		const dataOfUser = await responseOfUser.json();
+
+		//setting this simultaneously as we will have same index of userName and his data
+		//we are using 2 used states here as we can dynamically get index of user and access userdata
 		setUserRatingList([...userRatingList, dataOfUser.result[0]]);
 		setUserNameList([...userNameList, dataOfUser.result.handle]);
-		var tempList = [];
-		for (var i = 0; i < data.result.length; i++) {
-			const obj = data.result[i];
+
+
+		var currentUserSubmissionsList = [];
+		//in currentUsereSubmissionsList we can collecting all accepted solutions
+		for (var i = 0; i < submissionsOfUser.result.length; i++) {
+			const obj = submissionsOfUser.result[i];
 			if (obj.verdict === "OK") {
-				tempList.push({problem: obj.problem, name: obj.problem.name});
+				currentUserSubmissionsList.push({problem: obj.problem, name: obj.problem.name});
 			}
 		}
 
-		var tempList2 = [...new Map(tempList.map((item) => [item["name"], item])).values()];
+		var tempList2 = [...new Map(currentUserSubmissionsList.map((item) => [item["name"], item])).values()];
 
 		tempList2.sort((a, b) => (a.problem.rating > b.problem.rating) ? 1 : -1);
 		setUserData([...userData, tempList2]);
-		setInfo(tempList2);
 		setUserProblemList([...userProblemList, ...tempList2]);
+
+
+		setInfo(tempList2);
 		setCurUser("");
 	}
 
-	const [windowHeight, setWindowHeight] = useState(window.innerHeight);
-
-	useEffect(() => {
-        const handleWindowResize = () => {
-            setWindowHeight(window.innerHeight);
-        };
-        
-        window.addEventListener('resize', handleWindowResize);
-
-        return () => {
-            window.removeEventListener('resize', handleWindowResize);
-        }
-    }, []);
 
 	useEffect(() => {
 		if (userData.length >= 1){
@@ -143,70 +149,75 @@ function App() {
 		}
 	}, [userData])
 	
-	// const { width, height } = useWindowDimensions();
 	return (
-		<div style={ { backgroundImage : `url(${bgimg})`, height: "80000px"} }>
-		<Box bg='transparent' alignItems='center'>
-			<VStack pt={10} pb={125} px='auto' spacing={5} direction={['column', 'column', 'row']}>
+		<div style={{ backgroundImage: `url(${bgimg})` , height:"20000px"}}>
+			<Box bg='transparent' alignItems='center'>
+				<VStack pt={10} pb={125} px='auto' spacing={5} direction={['column', 'column', 'row']}>
 					<Heading style={{ color : "white"}}>Problems SelecTHOR</Heading>
-				<HStack>{ userRatingList.map(item => (
-						<Button colorScheme={ratings[item.rank] || "red"} onClick={() => getUserList(item.handle)}>
-							{item.handle}
-						</Button>
-				))}</HStack>
-			<HStack>
-				<InputGroup w="80%" alignItems="center">
-					<InputLeftAddon children="CF Handle" />
-					<Input style={{color : "white"}} onChange={typing} value={curUser} placeholder={"tourist"}></Input>
-				</InputGroup>
+					<HStack>
+							{userRatingList.map(item => (
+								<Button colorScheme={ratings[item.rank] || "red"} onClick={() => getUserList(item.handle)}>
+									{item.handle}
+								</Button>
+							))}
+					</HStack>
+
+
+					<HStack>
+						<InputGroup w="80%" alignItems="center">
+							<InputLeftAddon children="CF Handle" />
+							<Input style={{color : "white"}} onChange={getUserName} value={curUser} placeholder={"tourist"}></Input>
+						</InputGroup>
 						<Button colorScheme="white" onClick={getUsers}>Add</Button>
 					</HStack>
-					
+							
 
-			<HStack>
-				<Button onClick={getIntersection}>Intersection</Button>
-				<Button onClick={getUnion}>Union</Button>
-			</HStack>
-					
+					<HStack>
+						<Button onClick={getIntersection}>Intersection</Button>
+						<Button onClick={getUnion}>Union</Button>
+					</HStack>
+							
 
-			<Stack alignItems={"center"}>
-				<InputGroup w="100%" alignItems="center">
-					<InputLeftAddon children="Rating " />
-					<Input placeholder="800" onChange={handleRatingChange} style={{color : "white"}} ></Input>
-					<Button mx={5} colorScheme="white" onClick={getRatedProblems}>Filter</Button>
-				</InputGroup>
-			</Stack>
+					<Stack alignItems={"center"}>
+						<InputGroup w="100%" alignItems="center">
+							<InputLeftAddon children="Rating " />
+							<Input placeholder="800" onChange={getRating} style={{color : "white"}} value={rating} ></Input>
+							<Button mx={5} colorScheme="white" onClick={getFilteredList}>Filter</Button>
+						</InputGroup>
+					</Stack>
 
 
-			<TableContainer>
-				<Table variant="simple">
-					<TableCaption>Ratings</TableCaption>
-					<Thead>
-						<Tr >
-							<Th style={{color : "white"}}>Sr. No</Th>
-							<Th style={{color : "white"}}>Index</Th>
-							<Th style={{color : "white"}}>Problem Name</Th>
-							<Th isNumeric style={{color : "white"}}>Rating</Th>
-							<Th style={{color : "white"}}>Link</Th>
-						</Tr>
-					</Thead>
-					<Tbody >
-						{info.map((item, idx) => (
-							<Tr>
-								<Th style={{color : "white"}}>{idx+1}</Th>
-								<Th style={{color : "white"}}>{item.problem.index}</Th>
-								<Th style={{color : "white"}}>{item.problem.name}</Th>
-								<Th style={{color : "white"}}>{item.problem.rating}</Th>
-								<Th ><Button onClick={() => {
-									window.open(str + item.problem.contestId + "/" + item.problem.index);
-								}}>Open</Button></Th>
-							</Tr>
-						))}
-					</Tbody>
-				</Table>
-			</TableContainer>
-			</VStack>
-		</Box>
+					<TableContainer>
+						<Table variant="simple">
+							<TableCaption>Ratings</TableCaption>
+							<Thead>
+								<Tr >
+									<Th style={{color : "white"}}>Sr. No</Th>
+									<Th style={{color : "white"}}>Index</Th>
+									<Th style={{color : "white"}}>Problem Name</Th>
+									<Th isNumeric style={{color : "white"}}>Rating</Th>
+									<Th style={{color : "white"}}>Link</Th>
+								</Tr>
+							</Thead>
+							<Tbody >
+								{
+									info.map((item, idx) => (
+										<Tr>
+											<Th style={{color : "white"}}>{idx+1}</Th>
+											<Th style={{color : "white"}}>{item.problem.index}</Th>
+											<Th style={{color : "white"}}>{item.problem.name}</Th>
+											<Th style={{color : "white"}}>{item.problem.rating}</Th>
+											<Th ><Button onClick={() => {
+												window.open(str + item.problem.contestId + "/" + item.problem.index);
+											}}>Open</Button></Th>
+										</Tr>
+									))
+								}
+							</Tbody>
+						</Table>
+					</TableContainer>
+				</VStack>
+			</Box>
 		</div>
   	);
 }
