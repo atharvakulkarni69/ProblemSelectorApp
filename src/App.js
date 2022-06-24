@@ -15,7 +15,7 @@ import bgimg from "./constants/im1.jpg";
 
 function App() {
 	//constants
-	const str = "https://codeforces.com/problemset/problem/";
+	const problemLinkInitial = "https://codeforces.com/problemset/problem/";
 	const userStatusApi = "https://codeforces.com/api/user.status?handle=";
 	const userInfoApi = "https://codeforces.com/api/user.info?handles=";
 
@@ -27,18 +27,15 @@ function App() {
 	const [intersection, setIntersection] = useState([]);
 	const [info, setInfo] = useState([]);
 	const [userRatingList, setUserRatingList] = useState([]);
-	const [rating, setRating] = useState();
+	const [lowRating, setLowRating] = useState();
+	const [highRating, setHighRating] = useState();
+
 	const [filter, setFilter] = useState("Default");
 
 
 	//Handlers
 	function getUserName(event) {
 		setCurUser(event.target.value);
-	}
-
-	//set filtered rating 
-	const getRating = (e) => {
-		setRating(e.target.value);
 	}
 
 
@@ -64,13 +61,20 @@ function App() {
 
 	//finding list of filtered rating according to previous filter (union or intersection)
 	const getFilteredList = () => {
+		if (lowRating === "") {
+			lowRating = 800;
+		}
+		if (highRating === "") {
+			highRating = 3500;
+		}
+		
 		let temp = [];
 		console.log(filter);
 		if (filter === "Intersection") {
 			if (userData.length >= 2) {
 				temp = userData[0];
 				for (var i = 1; i < userData.length; i++) {
-					temp = (temp.filter(item1 => userData[i].some(item2 => item1.problem.name === item2.problem.name && item1.problem.rating == rating)));
+					temp = (temp.filter(item1 => userData[i].some(item2 => item1.problem.name === item2.problem.name && item1.problem.rating >= lowRating && item1.problem.rating <= highRating)));
 				}
 			}
 			setInfo(temp);
@@ -78,14 +82,15 @@ function App() {
 		else {
 			//union or default case
 			for (var i = 0; i < userProblemList.length; i++) {
-				if (userProblemList[i].problem.rating == rating) {
+				if (userProblemList[i].problem.rating >= lowRating && userProblemList[i].problem.rating <= highRating) {
 					temp.push(userProblemList[i]);
 				}
 			}
 			console.log(temp);
 			setInfo(temp);
 		}
-		setRating("");
+		setLowRating("");
+		setHighRating("");
 	}
 
 	//set userlist problems for every user
@@ -131,14 +136,17 @@ function App() {
 			}
 		}
 
-		var tempList2 = [...new Map(currentUserSubmissionsList.map((item) => [item["name"], item])).values()];
+		var curUserData = [...new Map(currentUserSubmissionsList.map((item) => [item["name"], item])).values()];
 
-		tempList2.sort((a, b) => (a.problem.rating > b.problem.rating) ? 1 : -1);
-		setUserData([...userData, tempList2]);
-		setUserProblemList([...userProblemList, ...tempList2]);
+		//sorting data according to raing
+		curUserData.sort((a, b) => (a.problem.rating > b.problem.rating) ? 1 : -1);
 
 
-		setInfo(tempList2);
+		setUserData([...userData, curUserData]);
+		setUserProblemList([...userProblemList, ...curUserData]);
+
+		//setiing states
+		setInfo(curUserData);
 		setCurUser("");
 	}
 
@@ -181,7 +189,8 @@ function App() {
 					<Stack alignItems={"center"}>
 						<InputGroup w="100%" alignItems="center">
 							<InputLeftAddon children="Rating " />
-							<Input placeholder="800" onChange={getRating} style={{color : "white"}} value={rating} ></Input>
+							<Input placeholder="low" onChange={(e) => setLowRating(e.target.value)} style={{ color: "white" }} value={lowRating} htmlSize={5} ></Input>
+							<Input placeholder="high" onChange={(e) => setHighRating(e.target.value)} style={{color : "white"}} value={highRating} htmlSize={5}></Input>
 							<Button mx={5} colorScheme="white" onClick={getFilteredList}>Filter</Button>
 						</InputGroup>
 					</Stack>
@@ -208,7 +217,7 @@ function App() {
 											<Th style={{color : "white"}}>{item.problem.name}</Th>
 											<Th style={{color : "white"}}>{item.problem.rating}</Th>
 											<Th ><Button onClick={() => {
-												window.open(str + item.problem.contestId + "/" + item.problem.index);
+												window.open(problemLinkInitial + item.problem.contestId + "/" + item.problem.index);
 											}}>Open</Button></Th>
 										</Tr>
 									))
