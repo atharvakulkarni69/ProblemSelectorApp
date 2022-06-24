@@ -157,7 +157,7 @@ function App() {
 	}, [userData])
 	
 	return (
-		<div style={{ backgroundImage: `url(${bgimg})` , height:"20000px"}}>
+		<div style={{ backgroundImage: `url(${bgimg})` , height:"80000px"}}>
 			<Box bg='transparent' alignItems='center'>
 				<VStack pt={10} pb={125} px='auto' spacing={5} direction={['column', 'column', 'row']}>
 					<Heading style={{ color : "white"}}>Problems SelecTHOR</Heading>
