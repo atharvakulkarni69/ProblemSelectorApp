@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Button, Heading, Input, Text, useRadio, Box, VStack, Stack, HStack, InputGroup, InputLeftAddon, Table,
+import { Button, Heading, Input, Box, VStack, Stack, HStack, InputGroup, InputLeftAddon, Table,
 	Thead,
 	Tbody,
-	Tfoot,
 	Tr,
 	Th,
-	Td,
 	TableCaption,
-	TableContainer,Badge } from '@chakra-ui/react';
-import { Grid, GridItem } from '@chakra-ui/react'
+	TableContainer } from '@chakra-ui/react';
 import { ratings } from './Components/ratingColors';
 import bgimg from "./constants/im1.jpg";
 
@@ -95,6 +92,7 @@ function App() {
 
 	//set userlist problems for every user
 	const getUserList = (username) => {
+		console.log(username);
 		let currUserIdx = 0;
 		for (var i = 0; i < userRatingList.length; i++) {
 			if (username === userRatingList[i].handle){
@@ -120,6 +118,7 @@ function App() {
 
 		const responseOfUser = await fetch(userInfoApi + curUser);//Returns information about one or several users.
 		const dataOfUser = await responseOfUser.json();
+		console.log(dataOfUser);
 
 		//setting this simultaneously as we will have same index of userName and his data
 		//we are using 2 used states here as we can dynamically get index of user and access userdata
@@ -164,7 +163,7 @@ function App() {
 					<Heading style={{ color : "white"}}>Problems SelecTHOR</Heading>
 					<HStack>
 							{userRatingList.map(item => (
-								<Button colorScheme={ratings[item.rank] || "red"} onClick={() => getUserList(item.handle)}>
+								<Button colorScheme={(!item.rank ? "black" : (ratings[item.rank] || "red"))} onClick={() => getUserList(item.handle)}>
 									{item.handle}
 								</Button>
 							))}
