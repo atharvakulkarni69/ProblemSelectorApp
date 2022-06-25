@@ -8,6 +8,7 @@ import { Button, Heading, Input, Box, VStack, Stack, HStack, InputGroup, InputLe
 	TableContainer } from '@chakra-ui/react';
 import { ratings } from './Components/ratingColors';
 import bgimg from "./constants/im1.jpg";
+import { type } from "@testing-library/user-event/dist/type";
 
 
 function App() {
@@ -24,8 +25,8 @@ function App() {
 	const [intersection, setIntersection] = useState([]);
 	const [info, setInfo] = useState([]);
 	const [userRatingList, setUserRatingList] = useState([]);
-	const [lowRating, setLowRating] = useState();
-	const [highRating, setHighRating] = useState();
+	const [lowRating, setLowRating] = useState("");
+	const [highRating, setHighRating] = useState("");
 
 	const [filter, setFilter] = useState("Default");
 
@@ -40,10 +41,11 @@ function App() {
 	const getIntersection = (e) => {
 		setFilter("Intersection");
 		if (userData.length >= 2) {
-			let temp = intersection;
+			let temp = userData[0];
 			for (var i = 1; i < userData.length; i++) {
 				temp = (temp.filter(item1 => userData[i].some(item2 => item1.problem.name === item2.problem.name)));
 			}
+			temp.sort((a, b) => (a.problem.rating > b.problem.rating) ? 1 : -1);
 			setInfo(temp);
 		}
 	}
@@ -58,36 +60,45 @@ function App() {
 
 	//finding list of filtered rating according to previous filter (union or intersection)
 	const getFilteredList = () => {
-		if (lowRating === "") {
-			lowRating = 800;
-		}
-		if (highRating === "") {
-			highRating = 3500;
-		}
+
 		
 		let temp = [];
-		console.log(filter);
+		// console.log("filter is " + filter);
+		var low = parseInt(lowRating, 10);
+		var high = parseInt(highRating,10);
+		if (lowRating === "") {
+			low = 800;
+			setLowRating("800");
+		}
+		if (highRating === "") {
+			high = 3500;
+			setHighRating(3500);
+		}
+		// console.log((low));
+		// console.log((high));
+
 		if (filter === "Intersection") {
 			if (userData.length >= 2) {
 				temp = userData[0];
 				for (var i = 1; i < userData.length; i++) {
-					temp = (temp.filter(item1 => userData[i].some(item2 => item1.problem.name === item2.problem.name && item1.problem.rating >= lowRating && item1.problem.rating <= highRating)));
+					console.log(typeof(userData[i][0].problem.rating));
+					temp = (temp.filter(item1 => userData[i].some(item2 => item1.problem.name === item2.problem.name && item1.problem.rating >= low && item1.problem.rating <= high)));
 				}
 			}
-			setInfo(temp);
 		}
 		else {
 			//union or default case
 			for (var i = 0; i < userProblemList.length; i++) {
-				if (userProblemList[i].problem.rating >= lowRating && userProblemList[i].problem.rating <= highRating) {
-					temp.push(userProblemList[i]);
+				var curRating = userProblemList[i].problem.rating;
+				if (curRating >= low && curRating <= high) {
+					temp.push({problem: userProblemList[i].problem, name: userProblemList[i].problem.name});
 				}
 			}
-			console.log(temp);
-			setInfo(temp);
 		}
-		setLowRating("");
-		setHighRating("");
+
+		// console.log(temp);
+		temp.sort((a, b) => (a.problem.rating > b.problem.rating) ? 1 : -1);
+		setInfo(temp);
 	}
 
 	//set userlist problems for every user
