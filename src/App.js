@@ -86,7 +86,7 @@ function App() {
 				}
 			}
 		}
-		else {
+		else if(filter === "Union"){
 			//union or default case
 			for (var i = 0; i < userProblemList.length; i++) {
 				var curRating = userProblemList[i].problem.rating;
@@ -110,7 +110,23 @@ function App() {
 				currUserIdx = i;
 			}
 		}
-		setInfo(userData[currUserIdx]);
+		var low = parseInt(lowRating, 10);
+		var high = parseInt(highRating,10);
+		if (lowRating === "") {
+			low = 800;
+			// setLowRating("800");
+		}
+		if (highRating === "") {
+			high = 3500;
+			// setHighRating(3500);
+		}
+		let temp = userData[currUserIdx];
+		for (var i = 0; i < userData[currUserIdx]; i++){
+			if (userData[currUserIdx][i].problem.rating >= low && userData[currUserIdx][i].problem.rating <= high) {
+				temp.push({ problem: userData[currUserIdx][i].problem, name: userData[currUserIdx][i].problem.name });
+			}
+		}
+		setInfo(temp);
 	}
 
 
@@ -171,7 +187,7 @@ function App() {
 		<div style={{ backgroundImage: `url(${bgimg})` , height:"80000px"}}>
 			<Box bg='transparent' alignItems='center'>
 				<VStack pt={10} pb={125} px='auto' spacing={5} direction={['column', 'column', 'row']}>
-					<Heading style={{ color : "white"}}>Problems SelecTHOR</Heading>
+					<Heading style={{ color : "white"}}>Problems Selector</Heading>
 					<HStack>
 							{userRatingList.map(item => (
 								<Button colorScheme={(!item.rank ? "black" : (ratings[item.rank] || "red"))} onClick={() => getUserList(item.handle)}>
@@ -225,7 +241,7 @@ function App() {
 											<Th style={{color : "white"}}>{idx+1}</Th>
 											<Th style={{color : "white"}}>{item.problem.index}</Th>
 											<Th style={{color : "white"}}>{item.problem.name}</Th>
-											<Th style={{color : "white"}}>{item.problem.rating}</Th>
+											<Th style={{color : "white"}}>{item.problem.rating || "NA"}</Th>
 											<Th ><Button onClick={() => {
 												window.open(problemLinkInitial + item.problem.contestId + "/" + item.problem.index);
 											}}>Open</Button></Th>
